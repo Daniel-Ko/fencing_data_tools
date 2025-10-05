@@ -1,11 +1,12 @@
 import json
 import os
+from datetime import datetime
 
 import requests
 import click
 from dotenv import load_dotenv
 
-def get_tournaments_with_token(grt_token, state="CA"):
+def get_tournaments_with_token(params):
     """
     Get tournaments using a manually obtained reCAPTCHA token
     
@@ -21,19 +22,9 @@ def get_tournaments_with_token(grt_token, state="CA"):
     """
     url = "https://www.fencingtimelive.com/tournaments/search/data"
     
-    params = {
-        "filter": "Country", # "All", "FIE", "Country" (default=All)
-        "usa": "Loc", # "Nat", "Reg", "Loc" (default=Loc)
-        "country": "AUS", # (default=USA)
-        "region": 0, # 1 to 6 (default=0)
-        "local": "State", 
-        "state": state,
-        "date": 0,
-        "today": "2025-10-05",  # Update this to current date
-        "grt": grt_token
-    }
-    
-    print(f"Fetching tournaments for {state}...")
+    print(params)
+#    print(f"Fetching {params['filter']} tournaments for {if params['country'] then params['country'] else ''}...")
+    print(f"Fetching {params['filter']}")
     response = requests.get(url, params=params)
     
     if response.status_code == 200:
@@ -64,14 +55,32 @@ def print_tournaments(tournaments):
     print("\n" + "="*60)
 
 
-if __name__ == "__main__":
-    load_dotenv()    
 
-    GRT_TOKEN = os.getenv("GRT_TOKEN")
-    tournaments = get_tournaments_with_token(GRT_TOKEN, state="CA")
+@click.command()
+@click.option("--filter", "-f", type=click.Choice(["All", "FIE",
+"Country"]), default="All")
+@click.option("--country", default="NZL")
+@click.option("--usa", type=click.Choice(["Nat", "Reg", "Loc"]), default="Loc")
+@click.option("--region", default=0)
+@click.option('--state', '-s', default='CA')
+@click.option("--local")
+@click.option("--date")
+def main(filter, country, usa, region, state, local, date):
+    params = locals()
+    if country:
+        params["filter"] = "Country"
+        params["country"] = country
+    params["today"] = datetime.today().strftime("%Y-%m-%d")
+    params["grt"] = os.getenv("GRT_TOKEN")
+    tournaments = get_tournaments_with_token(params)
     print_tournaments(tournaments)
         
     if tournaments:
         with open("tournaments.json", "w") as f:
             json.dump(tournaments, f, indent=2)
             print("\n✓ Saved to tournaments.json")
+
+if __name__ == "__main__":
+    load_dotenv()    
+    main()    
+
