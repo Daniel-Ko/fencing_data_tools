@@ -6,7 +6,7 @@ import requests
 import click
 from dotenv import load_dotenv
 
-def get_tournaments_with_token(params):
+def fetch(params, endpoint):
     """
     Get tournaments using a manually obtained reCAPTCHA token
     
@@ -14,7 +14,6 @@ def get_tournaments_with_token(params):
         "filter" > "country" 
 
     Args:
-        grt_token: The reCAPTCHA token from browser DevTools
         state: US state code
     
     Returns:
@@ -54,14 +53,13 @@ def print_tournaments(tournaments):
     print("\n" + "="*60)
 
 
-
 @click.command()
 @click.option("--filter", "-f", type=click.Choice(["All", "FIE",
 "Country"], case_sensitive=False), default="All")
 @click.option("--country", "-c", default="NZL")
 @click.option("--usa", type=click.Choice(["Nat", "Reg", "Loc"],
 case_sensitive=False), default="Loc")
-@click.option("--region", "-r", default=0)
+@click.option("--region", "-r", type=click.IntRange(0,default=0)
 @click.option('--state', '-s', default='CA')
 @click.option("--local", "-l")
 @click.option("--date", "-d")
@@ -75,7 +73,7 @@ def main(filter, country, usa, region, state, local, date):
 
     params["today"] = datetime.today().strftime("%Y-%m-%d")
     params["grt"] = os.getenv("GRT_TOKEN")
-    tournaments = get_tournaments_with_token(params)
+    tournaments = fetch(params)
     print_tournaments(tournaments)
         
     if tournaments:
@@ -85,5 +83,5 @@ def main(filter, country, usa, region, state, local, date):
 
 if __name__ == "__main__":
     load_dotenv()    
-    main()    
+    main()
 
